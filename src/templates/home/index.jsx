@@ -7,95 +7,103 @@ import { loadPosts } from '../../utils/load-posts'
 import { Posts } from '../../components/Posts';
 import { Button } from '../../components/Button'
 import { TextInput } from '../../components/TextInput/TextInput';
+import { useState } from 'react';
+import { useEffect } from 'react';
+import { useCallback } from 'react';
 
 
-class App extends Component {
-  state = {
-    posts: [],
-    allPosts: [],
-    page: 0,
-    postsPerPage: 4,
-    searchValue: ''
-  }
 
-  componentDidMount() {
-    this.loadPosts()
-  }
+export const Home = () => {
+  const [posts, setPosts] = useState([]);
+  const [allPosts, setAllPosts] = useState([]);
+  const [page, setPage] = useState(0);
+  const [postsPerPage, setPostsPerPage] = useState(4);
+  const [searchValue, setSearchValue] = useState('')
 
-  loadPosts = async () => {
-    const { page, postsPerPage } = this.state
+  const handleLoadPosts = useCallback(async (page, postsPerPage) => {
     const postAndPhotos = await loadPosts()
-    this.setState({
-      posts: postAndPhotos.slice(page, postsPerPage),
-      allPosts: postAndPhotos
-    })
-  }
+    setPosts(postAndPhotos.slice(page, postsPerPage))
+    setAllPosts(postAndPhotos)
+  }, [])
 
-  loadMorePosts = () => {
-    const {
-      posts,
-      allPosts,
-      page,
-      postsPerPage
-    } = this.state
-
+  const loadMorePosts = () => {
     const nextPage = page + postsPerPage
     const nextPosts = allPosts.slice(nextPage, nextPage + postsPerPage)
     posts.push(...nextPosts)
-    this.setState({ posts, page: nextPage })
+    setPosts(posts)
+    setPage(nextPage)
+    // this.setState({ posts, page: nextPage })
   }
 
-  handleChange = (e) => {
+  useEffect(() => {
+    handleLoadPosts(0, postsPerPage)
+  }, [handleLoadPosts, postsPerPage])
+
+  const noMorePosts = page + postsPerPage >= allPosts.length
+
+  let filteredPosts = []
+  if (!searchValue) {
+    filteredPosts = posts
+  } else {
+    filteredPosts = allPosts.filter((post) => {
+      return post.title.toLowerCase().includes(searchValue)
+    })
+  }
+
+  const handleChange = (e) => {
     const { value } = e.target
-    this.setState({ searchValue: value })
+    setSearchValue(value)
   }
 
-  render() {
-    const { posts, page, postsPerPage, allPosts, searchValue } = this.state
-    const noMorePosts = page + postsPerPage >= allPosts.length
-
-    let filteredPosts = []
-    if (!searchValue) {
-      filteredPosts = posts
-    } else {
-      filteredPosts = allPosts.filter((post) => {
-        return post.title.toLowerCase().includes(searchValue)
-      })
-    }
-
-    return (
-      <section className='container'>
-        <div className="search-container">
-          {!!searchValue && (
-            <h1>Test: {searchValue}</h1>
-          )}
-
-          <TextInput searchValue={searchValue} handleChange={this.handleChange} />
-        </div>
-
-        {filteredPosts.length > 0 && (
-          <Posts posts={filteredPosts} />
+  return (
+    <section className='container'>
+      <div className="search-container">
+        {!!searchValue && (
+          <h1>Test: {searchValue}</h1>
         )}
 
-        {filteredPosts.length === 0 && (
-          <p>Nenhum post</p>
+        <TextInput searchValue={searchValue} handleChange={handleChange} />
+      </div>
+
+      {filteredPosts.length > 0 && (
+        <Posts posts={filteredPosts} />
+      )}
+
+      {filteredPosts.length === 0 && (
+        <p>Nenhum post</p>
+      )}
+
+      <div className="button-container">
+        {/* Pensar como se realmente fosse um curto circuito, se a primeira for true (no caso do AND) */}
+        {/* O botão será renderizado */}
+        {!searchValue && (
+          <Button
+            text="Load more posts"
+            quandoClicado={loadMorePosts}
+            disabled={noMorePosts} />
         )}
 
-        <div className="button-container">
-          {/* Pensar como se realmente fosse um curto circuito, se a primeira for true (no caso do AND) */}
-          {/* O botão será renderizado */}
-          {!searchValue && (
-            <Button
-              text="Load more posts"
-              quandoClicado={this.loadMorePosts}
-              disabled={noMorePosts} />
-          )}
-
-        </div>
-      </section>
-    );
-  }
+      </div>
+    </section>
+  );
 }
 
 
-export default App;
+// class App extends Component {
+//   state = {
+//     posts: [],
+//     allPosts: [],
+//     page: 0,
+//     postsPerPage: 4,
+//     searchValue: ''
+//   }
+
+//   componentDidMount() {
+//     this.loadPosts()
+//   }
+
+
+// }
+
+
+// export default App;
