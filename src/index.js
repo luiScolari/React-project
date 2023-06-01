@@ -9,3 +9,5 @@ root.render(
     <Home />
   </React.StrictMode>,
 );
+
+console.log("testando")
